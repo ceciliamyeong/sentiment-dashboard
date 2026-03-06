@@ -1,0 +1,8 @@
+vaderSentiment==3.3.2
+praw==7.7.1
+requests==2.31.0
+feedparser==6.0.10
+pandas==2.1.0
+numpy==1.26.0
+plotly==5.17.0
+python-dotenv==1.0.0
