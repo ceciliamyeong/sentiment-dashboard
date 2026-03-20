@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>블록미디어 AI 데이터 터미널 데모</title>
+    <style>
+        body { font-family: sans-serif; background: #131722; color: white; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .header { border-bottom: 2px solid #2962ff; padding-bottom: 10px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: #1e222d; padding: 20px; border-radius: 8px; border: 1px solid #363c4e; }
+        .ai-badge { background: #2962ff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .status { color: #00ff88; font-size: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BLOCKMEDIA <span style="color:#2962ff">AI Terminal</span> <sup>Beta</sup></h1>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>실시간 시장 데이터 (via Yahoo Finance MCP)</h3>
+                <div style="height:400px; background:#2a2e39; display:flex; align-items:center; justify-content:center;">
+                    <p>차트 로딩 중... (BTC/USD 실시간 연동)</p>
+                </div>
+                <p class="status">● MCP Server Connected: Yahoo-Finance v1.2</p>
+            </div>
+
+            <div class="card">
+                <h3><span class="ai-badge">AI INSIGHT</span> 심층 분석</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: #d1d4dc;">
+                    <strong>[분석 결과]</strong><br>
+                    현재 비트코인은 $98,200 저항선을 테스트 중입니다. 
+                    MCP 데이터 분석 결과, 거래소 유입량이 감소하며 매도 압력이 완화되고 있습니다. 
+                    AAS 전략에 따라 비중 15% 유지를 권고합니다...
+                </p>
+                <hr style="border:0; border-top:1px solid #363c4e;">
+                <button style="width:100%; padding:10px; background:#2962ff; color:white; border:none; border-radius:4px; cursor:pointer;">
+                    구독하고 전체 리포트 보기 (월 4,900원)
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
