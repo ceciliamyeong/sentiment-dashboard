@@ -1067,15 +1067,15 @@ function renderNews(news) {
     return;
   }
   feed.innerHTML = filtered.slice(0,8).map(n => `
-    <div class="news-item">
+    <a class="news-item" href="${n.url||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">
       <div class="news-meta">
         <span class="news-kind ${n.kind}">${n.kind === 'bullish' ? '📈 강세' : n.kind === 'bearish' ? '📉 약세' : '⚡ 중립'}</span>
         <span class="news-time">${n.time}</span>
         <div class="news-coins">${(n.coins||[]).map(c=>`<span class="news-coin-tag">${c}</span>`).join('')}</div>
       </div>
       <div class="news-title">${n.title}</div>
-      <div class="news-source">출처: ${n.source}</div>
-    </div>
+      <div class="news-source">출처: ${n.source} ↗</div>
+    </a>
   `).join('');
 }
 
@@ -1187,13 +1187,13 @@ function renderBreakingNews(news) {
     return;
   }
   el.innerHTML = breaking.map(n => `
-    <div class="alert-item">
+    <a class="alert-item" href="${n.url||'#'}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;">
       <div class="alert-icon">${n.kind === 'bullish' ? '📈' : n.kind === 'bearish' ? '📉' : '⚡'}</div>
       <div>
         <div class="alert-text">${n.title}</div>
-        <div class="alert-time">${n.source} · ${n.time}</div>
+        <div class="alert-time">${n.source} · ${n.time} ↗</div>
       </div>
-    </div>`).join('');
+    </a>`).join('');
 }
 
 // ── SENTIMENT RING ─────────────────────────────────────────────
