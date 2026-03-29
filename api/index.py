@@ -95,8 +95,15 @@ async def get_coins():
             vol_7d  = p.get("socialVolume7d") or 0
             avg_7d  = vol_7d / 7 if vol_7d else 0
             change  = ((vol_24h - avg_7d) / avg_7d * 100) if avg_7d else 0
+            # sentiment_balance_total 은 실제로 양수/음수 큰 값일 수 있음
+            # 0 기준으로 50% 중립, 양수면 강세, 음수면 약세로 변환
             raw_sent = p.get("sentiment") or 0
-            sentiment_pct = round((raw_sent + 1) / 2 * 100)
+            if raw_sent > 0:
+                sentiment_pct = min(95, round(50 + (raw_sent / (abs(raw_sent) + 1)) * 45))
+            elif raw_sent < 0:
+                sentiment_pct = max(5, round(50 + (raw_sent / (abs(raw_sent) + 1)) * 45))
+            else:
+                sentiment_pct = 50
 
             results.append({
                 "slug": slug,
@@ -129,41 +136,70 @@ async def get_trending():
         r = await client.post(SANTIMENT_URL, json={"query": query}, headers=headers, timeout=15)
         return r.json()
 
-# ── Reddit 핫 포스트 (인증 없이 JSON API) ──────────────────────
+# ── 금융 RSS 피드 (Reuters + Yahoo Finance) ───────────────────
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+import email.utils
+
+RSS_FEEDS = [
+    {"url": "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines", "source": "MarketWatch", "category": "finance"},
+    {"url": "https://feeds.a.dj.com/rss/RSSMarketsMain.xml", "source": "WSJ Markets", "category": "finance"},
+    {"url": "https://rss.app/feeds/crypto-news.xml", "source": "Crypto News", "category": "crypto"},
+    {"url": "https://cointelegraph.com/rss", "source": "CoinTelegraph", "category": "crypto"},
+    {"url": "https://www.coindesk.com/arc/outboundfeeds/rss/", "source": "CoinDesk", "category": "crypto"},
+    {"url": "https://feeds.feedburner.com/TheHackersNews", "source": "Finance News", "category": "finance"},
+]
+
 @app.get("/api/reddit")
-async def get_reddit():
-    headers = {
-        "User-Agent": "finance-dashboard/1.0 (by /u/anonymous)"
-    }
+async def get_finance_feed():
     all_posts = []
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; FinanceDashboard/1.0)"}
 
     async with httpx.AsyncClient() as client:
-        for sub in SUBREDDITS:
+        for feed in RSS_FEEDS:
             try:
-                url = f"https://www.reddit.com/r/{sub}/hot.json?limit=5"
-                r = await client.get(url, headers=headers, timeout=10, follow_redirects=True)
+                r = await client.get(feed["url"], headers=headers, timeout=8, follow_redirects=True)
                 if r.status_code != 200:
                     continue
-                data = r.json()
-                posts = data.get("data", {}).get("children", [])
-                for p in posts:
-                    d = p.get("data", {})
-                    if d.get("stickied"):
-                        continue
-                    all_posts.append({
-                        "subreddit": d.get("subreddit_name_prefixed", f"r/{sub}"),
-                        "title": d.get("title", ""),
-                        "score": d.get("score", 0),
-                        "comments": d.get("num_comments", 0),
-                        "url": f"https://reddit.com{d.get('permalink', '')}",
-                        "category": "crypto" if sub in ["CryptoCurrency", "Bitcoin", "ethereum"] else "finance",
-                    })
+                root = ET.fromstring(r.text)
+                ns = {"atom": "http://www.w3.org/2005/Atom"}
+                items = root.findall(".//item") or root.findall(".//atom:entry", ns)
+                for item in items[:4]:
+                    title = item.findtext("title") or item.findtext("atom:title", namespaces=ns) or ""
+                    link = item.findtext("link") or item.findtext("atom:link", namespaces=ns) or ""
+                    pub = item.findtext("pubDate") or item.findtext("atom:published", namespaces=ns) or ""
+
+                    # 시간 파싱
+                    try:
+                        if pub:
+                            dt = email.utils.parsedate_to_datetime(pub)
+                            secs = int((datetime.now(timezone.utc) - dt).total_seconds())
+                            if secs < 3600:
+                                time_str = f"{secs//60}분 전"
+                            elif secs < 86400:
+                                time_str = f"{secs//3600}시간 전"
+                            else:
+                                time_str = f"{secs//86400}일 전"
+                        else:
+                            time_str = "최근"
+                    except Exception:
+                        time_str = "최근"
+
+                    title = title.strip()
+                    if title:
+                        all_posts.append({
+                            "subreddit": feed["source"],
+                            "title": title,
+                            "score": 0,
+                            "comments": 0,
+                            "url": link.strip(),
+                            "category": feed["category"],
+                            "time": time_str,
+                        })
             except Exception:
                 continue
 
-    # 점수 기준 정렬
-    all_posts.sort(key=lambda x: x["score"], reverse=True)
-    return {"data": all_posts[:20]}
+    return {"data": all_posts[:24]}
 
 # ── 헬스체크 ───────────────────────────────────────────────────
 @app.get("/api/health")
